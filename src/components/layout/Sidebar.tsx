@@ -18,13 +18,13 @@ export const Sidebar = () => {
 
   return (
     <div className="w-64 bg-gray-900/90 backdrop-blur-sm border-r border-cyan-500/20 h-screen flex flex-col">
-      <div className="p-6 border-b border-cyan-500/20">
+      
         <h1 className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg"></div>
           MakeCommand
         </h1>
         <p className="text-gray-400 text-sm mt-1">Command Center</p>
-      </div>
+    
 
       <nav className="flex-1 p-4 space-y-2">
         {navItems.map((item) => (
