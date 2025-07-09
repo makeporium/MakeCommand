@@ -153,7 +153,7 @@ export const Calendar = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Temporal Nexus</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Temporal</h1>
           <p className="text-gray-400">Schedule and track your timeline</p>
         </div>
         <Button

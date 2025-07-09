@@ -21,7 +21,7 @@ export const Sidebar = () => {
       <div className="p-6 border-b border-cyan-500/20">
         <h1 className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg"></div>
-          NEXUS
+          MakeCommand
         </h1>
         <p className="text-gray-400 text-sm mt-1">Command Center</p>
       </div>
