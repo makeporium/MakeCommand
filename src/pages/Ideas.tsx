@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Lightbulb, Tag, Edit, Trash2, Star } from 'lucide-react';
+import { Plus, Lightbulb, Tag, Calendar, Edit, Trash2, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { toast } from 'sonner';
@@ -26,7 +26,7 @@ export const Ideas = () => {
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
-  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export const Ideas = () => {
     if (error) {
       toast.error('Failed to save idea');
     } else {
-      toast.success(editingIdea ? 'Idea updated!' : 'Idea saved!');
+      toast.success(editingIdea ? 'Idea updated!' : 'Idea captured!');
       resetForm();
       fetchIdeas();
     }
@@ -123,17 +123,18 @@ export const Ideas = () => {
     }
   };
 
-  const filteredIdeas = ideas.filter(idea => {
-    if (filterPriority === 'all') return true;
-    return idea.priority === filterPriority;
-  });
+  const filteredIdeas = ideas.filter(idea =>
+    idea.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    idea.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    idea.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Innovation Hub</h1>
-          <p className="text-gray-400">Capture your breakthrough concepts</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Innovation Lab</h1>
+          <p className="text-gray-400">Capture and develop breakthrough concepts</p>
         </div>
         <Button
           onClick={() => setShowForm(true)}
@@ -145,18 +146,15 @@ export const Ideas = () => {
       </div>
 
       <div className="mb-6">
-        <Select value={filterPriority} onValueChange={setFilterPriority}>
-          <SelectTrigger className="w-48 bg-gray-800/50 border-gray-700 text-white">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-700">
-            <SelectItem value="all">All Priorities</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Input
+            placeholder="Search ideas..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-gray-800/50 border-gray-700 text-white"
+          />
+        </div>
       </div>
 
       {showForm && (
@@ -173,7 +171,7 @@ export const Ideas = () => {
               required
             />
             <Textarea
-              placeholder="Describe your idea..."
+              placeholder="Describe your innovative idea..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="bg-gray-700/50 border-gray-600 text-white min-h-32"
@@ -200,7 +198,7 @@ export const Ideas = () => {
             </div>
             <div className="flex gap-3">
               <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700">
-                {editingIdea ? 'Update' : 'Save'} Idea
+                {editingIdea ? 'Update' : 'Capture'} Idea
               </Button>
               <Button type="button" variant="outline" onClick={resetForm}>
                 Cancel
@@ -210,24 +208,18 @@ export const Ideas = () => {
         </div>
       )}
 
-      <div className="grid gap-6">
+      <div className="grid gap-4">
         {filteredIdeas.map((idea) => (
           <div
             key={idea.id}
             className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-6 hover:border-yellow-500/30 transition-all duration-300"
           >
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
-                  <Lightbulb className="text-white" size={20} />
-                </div>
-                <h3 className="text-xl font-semibold text-white">{idea.title}</h3>
-              </div>
+            <div className="flex justify-between items-start mb-3">
+              <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                <Lightbulb size={20} className="text-yellow-400" />
+                {idea.title}
+              </h3>
               <div className="flex gap-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor(idea.priority)}`}>
-                  <Star size={12} className="inline mr-1" />
-                  {idea.priority}
-                </span>
                 <button
                   onClick={() => handleEdit(idea)}
                   className="text-cyan-400 hover:text-cyan-300 p-1"
@@ -242,24 +234,28 @@ export const Ideas = () => {
                 </button>
               </div>
             </div>
-            
             <p className="text-gray-300 mb-4 whitespace-pre-wrap">{idea.description}</p>
-            
             <div className="flex justify-between items-center">
               <div className="flex flex-wrap gap-2">
                 {idea.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 px-2 py-1 bg-orange-900/30 text-orange-400 rounded-full text-sm"
+                    className="flex items-center gap-1 px-2 py-1 bg-yellow-900/30 text-yellow-400 rounded-full text-sm"
                   >
                     <Tag size={12} />
                     {tag}
                   </span>
                 ))}
               </div>
-              <span className="text-gray-400 text-sm">
-                {new Date(idea.created_at).toLocaleDateString()}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className={`px-2 py-1 rounded-full text-xs capitalize ${getPriorityColor(idea.priority)}`}>
+                  {idea.priority}
+                </span>
+                <div className="flex items-center gap-1 text-gray-400 text-sm">
+                  <Calendar size={14} />
+                  {new Date(idea.created_at).toLocaleDateString()}
+                </div>
+              </div>
             </div>
           </div>
         ))}

@@ -246,7 +246,7 @@ export const Tasks = () => {
                   <SelectValue placeholder="Project" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="">No Project</SelectItem>
+                  <SelectItem value="no-project">No Project</SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
