@@ -61,41 +61,6 @@ NEXUS features a **dark, futuristic aesthetic** inspired by cyberpunk and sci-fi
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 - **Neon Accents**: Strategic use of glowing effects and gradients
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- Supabase account
-
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/yourusername/nexus-command-center.git
-cd nexus-command-center
-```
-
-2. **Install dependencies**
-```bash
-npm install
-```
-
-3. **Set up Supabase**
-- Create a new Supabase project
-- Run the provided SQL migrations in your Supabase SQL editor
-- Update the Supabase configuration in `src/integrations/supabase/client.ts`
-
-4. **Start the development server**
-```bash
-npm run dev
-```
-
-5. **Build for production**
-```bash
-npm run build
-```
-
 ## 📊 Database Schema
 
 The application uses a robust PostgreSQL schema with the following main tables:
@@ -108,30 +73,6 @@ The application uses a robust PostgreSQL schema with the following main tables:
 
 All tables include Row-Level Security (RLS) policies ensuring data privacy and security.
 
-## 🔧 Configuration
-
-### Environment Variables
-The application uses Supabase's built-in configuration. Update the following in your Supabase client:
-- `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_ANON_KEY`: Your Supabase anonymous key
-
-### Customization
-- **Themes**: Modify `src/index.css` for color scheme changes
-- **Components**: All UI components are in `src/components/`
-- **Pages**: Main application pages are in `src/pages/`
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🙏 Acknowledgments
 
 - **Supabase** for the incredible backend-as-a-service platform
@@ -141,10 +82,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-Created with ❤️ by [Your Name]
-
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
+Created by Ayush Shrivastava
 
 ---
 
