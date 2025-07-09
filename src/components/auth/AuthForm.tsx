@@ -18,7 +18,7 @@ export const AuthForm = () => {
 
     try {
       if (isSignUp) {
-        await signUp(email, password);
+        //await signUp(email, password);
         toast.success('Account created! Check your email to verify.');
       } else {
         await signIn(email, password);
