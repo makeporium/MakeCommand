@@ -176,7 +176,7 @@ export const Calendar = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="bg-gray-700/50 border-gray-600 text-white"
-              required
+              
             />
             <Textarea
               placeholder="Event description..."
@@ -202,7 +202,7 @@ export const Calendar = () => {
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
                 className="bg-gray-700/50 border-gray-600 text-white"
-                required
+                
               />
               {!allDay && (
                 <Input

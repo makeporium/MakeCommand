@@ -168,14 +168,14 @@ export const Ideas = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="bg-gray-700/50 border-gray-600 text-white"
-              required
+              
             />
             <Textarea
               placeholder="Describe your innovative idea..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="bg-gray-700/50 border-gray-600 text-white min-h-32"
-              required
+              
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input

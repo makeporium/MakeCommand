@@ -139,7 +139,7 @@ export const Projects = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="bg-gray-700/50 border-gray-600 text-white"
-              required
+              
             />
             <Textarea
               placeholder="Project description..."
