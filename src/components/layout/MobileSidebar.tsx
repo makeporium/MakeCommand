@@ -62,7 +62,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-purple-500/30">
           <div>
             <h1 className="text-2xl font-bold text-purple-400 font-futuristic">
-              NEXUS
+              MakeCommand
             </h1>
             <p className="text-purple-200 text-sm mt-1">
               Command Center

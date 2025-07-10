@@ -24,7 +24,7 @@ const getPageTitle = (pathname: string) => {
     case '/projects':
       return 'Project Central';
     default:
-      return 'NEXUS';
+      return 'MakeCommand';
   }
 };
 

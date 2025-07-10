@@ -35,7 +35,7 @@ export const AuthForm = () => {
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="bg-gray-900/50 border border-cyan-500/30 p-6 md:p-8 rounded-2xl backdrop-blur-sm max-w-md w-full">
         <div className="text-center mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-cyan-400 mb-2">NEXUS</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-cyan-400 mb-2">MakeCommand</h1>
           <p className="text-gray-400 text-sm md:text-base">Your Personal Command Center</p>
         </div>
 
