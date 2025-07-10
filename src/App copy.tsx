@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,14 +14,12 @@ import { Ideas } from "./pages/Ideas";
 import { Calendar } from "./pages/Calendar";
 import { Projects } from "./pages/Projects";
 import NotFound from "./pages/NotFound";
-import React from "react";
 
 const queryClient = new QueryClient();
 
-// 🔒 ProtectedRoute handles auth, loading, and layout
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -28,25 +27,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
-
+  
   if (!user) {
     return <AuthForm />;
   }
-
-  // ✅ Wrap Layout with background
-  return (
-    <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/background.jpg')" }}
-    >
-      <div className="backdrop-blur-md bg-black/70 min-h-screen">
-        <Layout>{children}</Layout>
-      </div>
-    </div>
-  );
+  
+  return <Layout>{children}</Layout>;
 };
 
-// 🧠 App component with all providers
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -56,54 +44,36 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/thoughts"
-              element={
-                <ProtectedRoute>
-                  <Thoughts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tasks"
-              element={
-                <ProtectedRoute>
-                  <Tasks />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/ideas"
-              element={
-                <ProtectedRoute>
-                  <Ideas />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/calendar"
-              element={
-                <ProtectedRoute>
-                  <Calendar />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/projects"
-              element={
-                <ProtectedRoute>
-                  <Projects />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/thoughts" element={
+              <ProtectedRoute>
+                <Thoughts />
+              </ProtectedRoute>
+            } />
+            <Route path="/tasks" element={
+              <ProtectedRoute>
+                <Tasks />
+              </ProtectedRoute>
+            } />
+            <Route path="/ideas" element={
+              <ProtectedRoute>
+                <Ideas />
+              </ProtectedRoute>
+            } />
+            <Route path="/calendar" element={
+              <ProtectedRoute>
+                <Calendar />
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute>
+                <Projects />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
