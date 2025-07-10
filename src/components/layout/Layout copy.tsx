@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 
 interface LayoutProps {
@@ -6,6 +6,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  // List of local background images
   const backgrounds = [
     '/backgrounds/bg1.jpg',
     '/backgrounds/bg2.jpg',
@@ -24,17 +25,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     '/backgrounds/bg15.jpg',
   ];
 
-  // 🔀 Start with a random index
-  const [bgIndex, setBgIndex] = useState(() => Math.floor(Math.random() * backgrounds.length));
+  const [bgIndex, setBgIndex] = useState(0);
   const [fade, setFade] = useState(false);
 
   const handleSwitchBackground = () => {
+    //setFade(true); // Trigger fade out
     setBgIndex((prev) => (prev + 1) % backgrounds.length);
+    //setTimeout(() => {
+      
+      //setFade(false); // Trigger fade in
+    //}); // Duration should match fade-out animation
   };
 
   return (
     <div className="relative flex min-h-screen overflow-hidden text-white">
-      {/* Background Image Layer */}
+      {/* Background Image Layer with fade */}
       <div
         className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
           fade ? 'opacity-0' : 'opacity-100'
@@ -47,9 +52,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         }}
       />
 
+      {/* Sidebar */}
       <Sidebar onSwitchBackground={handleSwitchBackground} />
 
-      <main className="flex-1 overflow-y-auto bg-black/50 backdrop-blur-[0.5px]">
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto bg-black/50">
         {children}
       </main>
     </div>

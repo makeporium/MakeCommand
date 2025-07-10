@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,8 +11,8 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background: url('/background.jpg') no-repeat center center fixed;
+  font-family: 'Inter Tight', sans-serif;
+  background: url('/background (2).jpg') no-repeat center center fixed;
   background-size: cover;
   color: #ffffff;
   overflow-x: hidden;
