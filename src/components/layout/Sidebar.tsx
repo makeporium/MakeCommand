@@ -33,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSwitchBackground }) => {
       {/* Header */}
       <div className="p-6 border-b border-purple-500/30">
         <h1 className="text-2xl font-bold text-purple-400 font-futuristic flex items-center gap-2 drop-shadow">
-          MakeCommand
+          NEXUS
         </h1>
         <p className="text-purple-200 text-sm mt-1 drop-shadow">
           Command Center

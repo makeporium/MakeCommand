@@ -8,6 +8,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -16,8 +17,23 @@ body {
   background-size: cover;
   color: #ffffff;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Mobile-first optimizations */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* Touch-friendly interactions */
+button, a, [role="button"] {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
@@ -35,6 +51,13 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #606060;
+}
+
+/* Mobile scrollbar */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
 }
 
 /* Animations */
@@ -152,6 +175,17 @@ body {
   box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
 }
 
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .card-hover:hover {
+    transform: none;
+  }
+  
+  .card-hover:active {
+    transform: scale(0.98);
+  }
+}
+
 /* Pulse animation for status indicators */
 @keyframes pulse {
   0%, 100% {
@@ -164,4 +198,21 @@ body {
 
 .animate-pulse-slow {
   animation: pulse 2s ease-in-out infinite;
+}
+
+/* Mobile viewport fixes */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Prevent overscroll bounce on mobile */
+body {
+  overscroll-behavior: none;
+}
+
+/* Improve touch scrolling */
+* {
+  -webkit-overflow-scrolling: touch;
 }
