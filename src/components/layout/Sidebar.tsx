@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Brain,
@@ -30,7 +29,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSwitchBackground }) => {
   const { signOut } = useAuth();
 
   return (
-    <div className="w-64 min-h-screen flex flex-col justify-between border-r-2 border-purple-500/40 bg-black/50 backdrop-blur-[0.5px] font-inter-tight">
+    // Changed min-h-screen to h-full to ensure it fills available height within its flex parent
+    <div className="w-64 h-full flex flex-col justify-between border-r-2 border-purple-500/40 bg-black/50 backdrop-blur-[0.5px] font-inter-tight">
       {/* Header */}
       <div className="p-6 border-b border-purple-500/30">
         <h1 className="text-2xl font-bold text-purple-400 font-futuristic flex items-center gap-2 drop-shadow">

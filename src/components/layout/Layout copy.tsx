@@ -1,12 +1,37 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
+import { MobileSidebar } from './MobileSidebar';
+import { MobileHeader } from './MobileHeader';
+import { useLocation } from 'react-router-dom';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+const getPageTitle = (pathname: string) => {
+  switch (pathname) {
+    case '/dashboard':
+      return 'Dashboard';
+    case '/thoughts':
+      return 'Neural Thoughts';
+    case '/tasks':
+      return 'Task Management';
+    case '/ideas':
+      return 'Idea Capture';
+    case '/calendar':
+      return 'Smart Calendar';
+    case '/projects':
+      return 'Project Central';
+    default:
+      return 'MakeCommand';
+  }
+};
+
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  // List of local background images
+  const location = useLocation();
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  
   const backgrounds = [
     '/backgrounds/bg1.jpg',
     '/backgrounds/bg2.jpg',
@@ -25,40 +50,59 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     '/backgrounds/bg15.jpg',
   ];
 
-  const [bgIndex, setBgIndex] = useState(0);
-  const [fade, setFade] = useState(false);
+  const [bgIndex, setBgIndex] = useState(() => Math.floor(Math.random() * backgrounds.length));
 
   const handleSwitchBackground = () => {
-    //setFade(true); // Trigger fade out
     setBgIndex((prev) => (prev + 1) % backgrounds.length);
-    //setTimeout(() => {
-      
-      //setFade(false); // Trigger fade in
-    //}); // Duration should match fade-out animation
   };
+
+  const handleMobileMenuToggle = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
+  const pageTitle = getPageTitle(location.pathname);
 
   return (
     <div className="relative flex min-h-screen overflow-hidden text-white">
-      {/* Background Image Layer with fade */}
+    {/* Background Image Layer */}
       <div
-        className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
-          fade ? 'opacity-0' : 'opacity-100'
-        }`}
-        style={{
-          backgroundImage: `url(${backgrounds[bgIndex]})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          zIndex: -1,
-        }}
+  className="fixed inset-0 z-[-1] h-full w-full"
+  style={{
+    backgroundImage: `url(${backgrounds[bgIndex]})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  }}
+/>
+
+
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <Sidebar onSwitchBackground={handleSwitchBackground} />
+      </div>
+
+      {/* Mobile Sidebar */}
+      <MobileSidebar
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+        onSwitchBackground={handleSwitchBackground}
       />
 
-      {/* Sidebar */}
-      <Sidebar onSwitchBackground={handleSwitchBackground} />
-
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-black/50">
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile Header */}
+        <MobileHeader
+          onMenuClick={handleMobileMenuToggle}
+          title={pageTitle}
+        />
+
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto bg-black/50 backdrop-blur-[0.5px]">
+          <div className="p-4 md:p-8">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

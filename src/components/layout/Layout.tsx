@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { MobileSidebar } from './MobileSidebar';
@@ -31,7 +30,7 @@ const getPageTitle = (pathname: string) => {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  
+
   const backgrounds = [
     '/backgrounds/bg1.jpg',
     '/backgrounds/bg2.jpg',
@@ -66,12 +65,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="relative flex min-h-screen overflow-hidden text-white">
       {/* Background Image Layer */}
       <div
-        className="absolute inset-0 transition-opacity duration-500 ease-in-out"
+        className="fixed inset-0 z-[-1] h-full w-full"
         style={{
           backgroundImage: `url(${backgrounds[bgIndex]})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          zIndex: -1,
+          backgroundRepeat: 'no-repeat',
         }}
       />
 
@@ -88,6 +87,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       />
 
       {/* Main Content */}
+      {/* Reverted to original and correct flex-1 for the backdrop effect */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
         <MobileHeader
@@ -96,6 +96,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         />
 
         {/* Main Content Area */}
+        {/* The flex-1 on this main tag is correct for the main content area to fill space */}
         <main className="flex-1 overflow-y-auto bg-black/50 backdrop-blur-[0.5px]">
           <div className="p-4 md:p-8">
             {children}
