@@ -23,13 +23,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-cyan-400 text-xl">Initializing...</div>
+        <div className="text-cyan-400 text-xl">Initializing...</div>
       </div>
     );
   }
   
-
-
   if (!user) {
     return <AuthForm />;
   }

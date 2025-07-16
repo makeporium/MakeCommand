@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +25,13 @@ interface Project {
   color: string;
 }
 
+const priorityOrder = {
+  urgent: 1,
+  high: 2,
+  medium: 3,
+  low: 4,
+};
+
 export const Tasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -37,6 +43,7 @@ export const Tasks = () => {
   const [dueDate, setDueDate] = useState('');
   const [projectId, setProjectId] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [sortByDate, setSortByDate] = useState<boolean>(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -81,7 +88,7 @@ export const Tasks = () => {
       description: description || null,
       priority,
       due_date: dueDate || null,
-      project_id: projectId || null,
+      project_id: projectId === 'no-project' ? null : projectId,
       user_id: user.id,
     };
 
@@ -122,9 +129,9 @@ export const Tasks = () => {
 
     const { error } = await supabase
       .from('tasks')
-      .update({ 
+      .update({
         status: newStatus,
-        completed_at: completedAt
+        completed_at: completedAt,
       })
       .eq('id', task.id);
 
@@ -161,19 +168,49 @@ export const Tasks = () => {
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case 'urgent': return <AlertTriangle className="text-red-400" size={16} />;
-      case 'high': return <AlertTriangle className="text-orange-400" size={16} />;
-      case 'medium': return <Clock className="text-yellow-400" size={16} />;
-      case 'low': return <Clock className="text-green-400" size={16} />;
-      default: return <Clock className="text-gray-400" size={16} />;
+      case 'urgent':
+        return <AlertTriangle className="text-red-400" size={16} />;
+      case 'high':
+        return <AlertTriangle className="text-orange-400" size={16} />;
+      case 'medium':
+        return <Clock className="text-yellow-400" size={16} />;
+      case 'low':
+        return <Clock className="text-green-400" size={16} />;
+      default:
+        return <Clock className="text-gray-400" size={16} />;
     }
   };
-
-  const filteredTasks = tasks.filter(task => {
+  const filteredTasks = tasks
+  .filter(task => {
     if (filterStatus === 'all') return true;
     return task.status === filterStatus;
+  })
+  .sort((a, b) => {
+    if (sortByDate) {
+      const hasDateA = !!a.due_date;
+      const hasDateB = !!b.due_date;
+
+      // If one has a due date and the other doesn't
+      if (hasDateA && !hasDateB) return -1;
+      if (!hasDateA && hasDateB) return 1;
+
+      // If both have due dates, sort by due date ascending
+      if (hasDateA && hasDateB) {
+        const dateA = new Date(a.due_date!).getTime();
+        const dateB = new Date(b.due_date!).getTime();
+        return dateA - dateB;
+      }
+
+      // If neither has due dates, fall back to priority
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    }
+
+    // Default sort: priority only
+    return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
 
+
+  
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
@@ -202,6 +239,10 @@ export const Tasks = () => {
             <SelectItem value="completed">Completed</SelectItem>
           </SelectContent>
         </Select>
+
+        <Button variant="outline" onClick={() => setSortByDate(prev => !prev)}>
+          {sortByDate ? 'Priority + Date' : 'Priority Only'}
+        </Button>
       </div>
 
       {showForm && (
@@ -215,7 +256,6 @@ export const Tasks = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="bg-gray-700/50 border-gray-600 text-white"
-             
             />
             <Textarea
               placeholder="Task description..."
@@ -272,7 +312,9 @@ export const Tasks = () => {
           <div
             key={task.id}
             className={`bg-gray-800/40 border rounded-xl p-6 hover:border-cyan-500/30 transition-all duration-300 ${
-              task.status === 'completed' ? 'border-green-500/30 bg-green-900/10' : 'border-gray-700/50'
+              task.status === 'completed'
+                ? 'border-green-500/30 bg-green-900/10'
+                : 'border-gray-700/50'
             }`}
           >
             <div className="flex items-start gap-4">
@@ -288,7 +330,11 @@ export const Tasks = () => {
               </button>
               <div className="flex-1">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className={`text-lg font-semibold ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-white'}`}>
+                  <h3
+                    className={`text-lg font-semibold ${
+                      task.status === 'completed' ? 'text-gray-400 line-through' : 'text-white'
+                    }`}
+                  >
                     {task.title}
                   </h3>
                   <div className="flex gap-2">
@@ -306,9 +352,7 @@ export const Tasks = () => {
                     </button>
                   </div>
                 </div>
-                {task.description && (
-                  <p className="text-gray-300 mb-3">{task.description}</p>
-                )}
+                {task.description && <p className="text-gray-300 mb-3">{task.description}</p>}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
@@ -321,11 +365,15 @@ export const Tasks = () => {
                       </span>
                     )}
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    task.status === 'completed' ? 'bg-green-900/30 text-green-400' :
-                    task.status === 'in_progress' ? 'bg-blue-900/30 text-blue-400' :
-                    'bg-gray-700/30 text-gray-400'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      task.status === 'completed'
+                        ? 'bg-green-900/30 text-green-400'
+                        : task.status === 'in_progress'
+                        ? 'bg-blue-900/30 text-blue-400'
+                        : 'bg-gray-700/30 text-gray-400'
+                    }`}
+                  >
                     {task.status.replace('_', ' ')}
                   </span>
                 </div>

@@ -1,34 +1,57 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>MakeCommand - Personal Command Center</title>
-    
-    <!-- Mobile app meta tags -->
+
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MakeCommand" />
     <meta name="theme-color" content="#000000" />
-    
-    <!-- Prevent zoom on form inputs -->
+
     <meta name="format-detection" content="telephone=no" />
-    
-    <!-- Favicon -->
+
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    
-    <!-- PWA meta -->
+
     <meta property="og:title" content="MakeCommand - Personal Command Center" />
     <meta property="og:description" content="Your futuristic productivity platform" />
-    
-    <!-- Preload critical fonts -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>
 
   <body>
+    <script>
+      (function() {
+        if (window.location.hash.includes('access_token=')) {
+          console.log('--- RAW HASH DETECTED AT ENTRY POINT ---');
+          console.log('Full hash:', window.location.hash);
+
+          try {
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            const accessToken = params.get('access_token');
+            const state = params.get('state');
+
+            console.log('Parsed access_token:', accessToken ? 'FOUND' : 'NOT FOUND');
+            console.log('Parsed state:', state);
+
+            if (accessToken && state === 'google_tasks_auth') {
+              sessionStorage.setItem('google_tasks_access_token', accessToken);
+              console.log('Access token stored in sessionStorage from raw hash capture.');
+              // Clear the hash to prevent re-triggering this on subsequent reloads
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          } catch (e) {
+            console.error('Error parsing hash at entry point:', e);
+          }
+          console.log('--- RAW HASH CAPTURE END ---');
+        } else {
+          console.log('No access_token hash at entry point.');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
