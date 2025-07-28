@@ -1,6 +1,6 @@
-# NEXUS - Personal Command Center 🚀
+# MakeCommand - Personal Command Center 🚀
 
-A futuristic personal productivity and organization platform built with React, TypeScript, and Supabase. NEXUS combines journaling, task management, project planning, idea capture, and calendar functionality in a sleek, cyberpunk-inspired interface.
+A futuristic personal productivity and organization platform built with React, TypeScript, and Supabase. MakeCommand combines journaling, task management, project planning, idea capture, and calendar functionality in a sleek, cyberpunk-inspired interface.
 
 ## ✨ Features
 
@@ -53,7 +53,7 @@ A futuristic personal productivity and organization platform built with React, T
 
 ## 🎨 Design Philosophy
 
-NEXUS features a **dark, futuristic aesthetic** inspired by cyberpunk and sci-fi interfaces:
+MakeCommand features a **dark, futuristic aesthetic** inspired by cyberpunk and sci-fi interfaces:
 
 - **Color Palette**: Deep blacks, grays, and vibrant cyan/blue accents
 - **Typography**: Clean, modern fonts with excellent readability
@@ -86,4 +86,4 @@ Created by Ayush Shrivastava
 
 ---
 
-**NEXUS** - Where productivity meets the future. 🌟
+**MakeCommand** - Where productivity meets the future. 🌟
