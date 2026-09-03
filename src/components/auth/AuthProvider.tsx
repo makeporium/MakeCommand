@@ -29,44 +29,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const handleAuth = async () => {
       try {
-        // 1. Check if OAuth tokens exist in the URL hash
-        if (typeof window !== 'undefined' && window.location.hash) {
-          const hash = window.location.hash.substring(1);
-          if (hash.includes('access_token=')) {
-            const params = new URLSearchParams(hash);
-            const accessToken = params.get('access_token');
-            const refreshToken = params.get('refresh_token');
+        // 1. Check if OAuth tokens exist in the URL hash OR in sessionStorage backup
+        const rawHash = (typeof window !== 'undefined' && window.location.hash && window.location.hash.includes('access_token='))
+          ? window.location.hash
+          : (typeof window !== 'undefined' ? sessionStorage.getItem('supabase_auth_hash') || '' : '');
 
-            if (accessToken && refreshToken) {
+        if (rawHash && rawHash.includes('access_token=')) {
+          const cleanHash = rawHash.startsWith('#') ? rawHash.substring(1) : rawHash;
+          const params = new URLSearchParams(cleanHash);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (accessToken) {
+            try {
+              sessionStorage.removeItem('supabase_auth_hash');
+            } catch (e) {}
+
+            // Try to setSession
+            try {
               const { data, error } = await supabase.auth.setSession({
                 access_token: accessToken,
-                refresh_token: refreshToken,
+                refresh_token: refreshToken || '',
               });
 
               if (!error && data?.session?.user) {
                 setUser(data.session.user);
                 setLoading(false);
-                // Clean hash from URL without reloading
-                window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                window.history.replaceState(null, '', window.location.pathname);
                 return;
               }
+            } catch (sessionErr) {
+              console.warn('setSession error, falling back to getUser:', sessionErr);
+            }
+
+            // Fallback: validate token directly via getUser
+            const { data: userData, error: userError } = await supabase.auth.getUser(accessToken);
+            if (!userError && userData?.user) {
+              setUser(userData.user);
+              setLoading(false);
+              window.history.replaceState(null, '', window.location.pathname);
+              return;
             }
           }
         }
 
-        // 2. Fallback to normal getSession
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.warn('Session refresh failed, clearing invalid session:', error);
-          supabase.auth.signOut({ scope: 'local' }).catch(() => {});
-          setUser(null);
+        // 2. Standard getSession check
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.user) {
+          setUser(sessionData.session.user);
         } else {
-          setUser(data?.session?.user ?? null);
+          // Check if getUser has an active user
+          const { data: uData } = await supabase.auth.getUser();
+          if (uData?.user) {
+            setUser(uData.user);
+          } else {
+            setUser(null);
+          }
         }
       } catch (err) {
-        console.warn('Unexpected auth error, resetting local session:', err);
-        supabase.auth.signOut({ scope: 'local' }).catch(() => {});
-        setUser(null);
+        console.warn('Auth check error:', err);
       } finally {
         setLoading(false);
       }
@@ -76,7 +97,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+      }
       setLoading(false);
     });
 

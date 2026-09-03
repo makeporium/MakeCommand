@@ -26,6 +26,9 @@
     <script>
       (function() {
         if (window.location.hash.includes('access_token=')) {
+          try {
+            sessionStorage.setItem('supabase_auth_hash', window.location.hash);
+          } catch (e) {}
           console.log('--- RAW HASH DETECTED AT ENTRY POINT ---');
           console.log('Full hash:', window.location.hash);
 
