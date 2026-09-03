@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { NavLink } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const navItems = [
   { path: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -27,6 +28,11 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onSwitchBackground }) => {
   const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    toast.info('Signing out...');
+    await signOut();
+  };
 
   return (
     // Changed min-h-screen to h-full to ensure it fills available height within its flex parent
@@ -72,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSwitchBackground }) => {
         </button>
 
         <button
-          onClick={signOut}
+          onClick={handleSignOut}
           className="w-full px-4 py-3 flex items-center gap-3 text-gray-400 border border-gray-500/50 hover:text-red-400 hover:bg-red-900/50 hover:border-red-500 transition-all duration-300 rounded-lg transform hover:-translate-y-[2px] hover:shadow-[0_6px_15px_rgba(255,0,80,0.3)]"
         >
           <LogOut size={20} />

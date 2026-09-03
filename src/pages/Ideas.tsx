@@ -36,13 +36,15 @@ export const Ideas = () => {
   }, [user]);
 
   const fetchIdeas = async () => {
+    if (!user) return;
     const { data, error } = await supabase
       .from('project_ideas')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast.error('Failed to fetch ideas');
+      toast.error(`Failed to fetch ideas: ${error.message}`);
     } else {
       setIdeas(data || []);
     }
@@ -73,9 +75,9 @@ export const Ideas = () => {
     }
 
     if (error) {
-      toast.error('Failed to save idea');
+      toast.error(`Failed to save idea: ${error.message}`);
     } else {
-      toast.success(editingIdea ? 'Idea updated!' : 'Idea captured!');
+      toast.success(editingIdea ? 'Idea updated!' : 'Idea saved!');
       resetForm();
       fetchIdeas();
     }

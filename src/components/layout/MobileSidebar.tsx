@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { NavLink } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const navItems = [
   { path: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -36,9 +37,10 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
 }) => {
   const { signOut } = useAuth();
 
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    toast.info('Signing out...');
     onClose();
+    await signOut();
   };
 
   const handleBackgroundSwitch = () => {

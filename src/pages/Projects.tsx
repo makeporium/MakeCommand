@@ -38,13 +38,15 @@ export const Projects = () => {
   }, [user]);
 
   const fetchProjects = async () => {
+    if (!user) return;
     const { data, error } = await supabase
       .from('projects')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast.error('Failed to fetch projects');
+      toast.error(`Failed to fetch projects: ${error.message}`);
     } else {
       setProjects(data || []);
     }
@@ -74,7 +76,7 @@ export const Projects = () => {
     }
 
     if (error) {
-      toast.error('Failed to save project');
+      toast.error(`Failed to save project: ${error.message}`);
     } else {
       toast.success(editingProject ? 'Project updated!' : 'Project created!');
       resetForm();

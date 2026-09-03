@@ -38,12 +38,14 @@ export const Thoughts = () => {
   }, [user]);
 
   const fetchThoughts = async () => {
+    if (!user) return;
     const { data, error } = await supabase
       .from('thoughts')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (error) toast.error('Failed to fetch thoughts');
+    if (error) toast.error(`Failed to fetch thoughts: ${error.message}`);
     else setThoughts(data || []);
   };
 
@@ -100,8 +102,10 @@ export const Thoughts = () => {
         .insert([thoughtData]));
     }
 
-    if (error) toast.error('Failed to save thought');
-    else {
+    if (error) {
+      console.error('Failed to save thought:', error);
+      toast.error(`Failed to save thought: ${error.message}`);
+    } else {
       toast.success(editingThought ? 'Thought updated!' : 'Thought saved!');
       resetForm();
       fetchThoughts();

@@ -97,38 +97,26 @@ export const Tasks = () => {
     toast.info('Signed out from Google Tasks.');
   };
 
-  // Effect to handle the OAuth redirect callback from Google AND load token from sessionStorage
   useEffect(() => {
-    console.log('--- OAuth/Session Storage Effect Running (Tasks.tsx) ---');
-    console.log('Current URL Hash (Tasks.tsx):', window.location.hash);
-
     const params = new URLSearchParams(window.location.hash.substring(1));
     const tokenFromHash = params.get('access_token');
     const stateFromHash = params.get('state');
 
     if (tokenFromHash && stateFromHash === 'google_tasks_auth') {
-      console.log('Tasks.tsx: Access token and state found in hash.');
       setGoogleAccessToken(tokenFromHash);
       setIsSignedInGoogle(true);
-      sessionStorage.setItem(GOOGLE_ACCESS_TOKEN_KEY, tokenFromHash); // Store for future sessions
-      window.history.replaceState({}, document.title, window.location.pathname); // Clear the hash
+      sessionStorage.setItem(GOOGLE_ACCESS_TOKEN_KEY, tokenFromHash);
+      window.history.replaceState({}, document.title, window.location.pathname);
       toast.success('Successfully connected to Google Tasks!');
     } else {
-      console.log('Tasks.tsx: No valid access token or state found directly in hash.');
-
       const storedToken = sessionStorage.getItem(GOOGLE_ACCESS_TOKEN_KEY);
-      console.log('Tasks.tsx: Token from sessionStorage:', storedToken ? 'Found' : 'Not Found');
       if (storedToken) {
-        console.log('Tasks.tsx: Access token found in session storage. Using stored token.');
         setGoogleAccessToken(storedToken);
         setIsSignedInGoogle(true);
-        toast.success('Successfully reconnected to Google Tasks from session storage!');
       } else {
-        console.log('Tasks.tsx: No access token found in session storage. User is NOT signed into Google Tasks.');
         setIsSignedInGoogle(false);
       }
     }
-    console.log('--- OAuth/Session Storage Effect Finished (Tasks.tsx) ---');
   }, []);
 
   // --- Google Tasks API Calls ---
@@ -156,7 +144,6 @@ export const Tasks = () => {
   }, [googleAccessToken]);
 
   const fetchGoogleTaskLists = useCallback(async () => {
-    console.log('Attempting to fetch Google Task lists. isSignedInGoogle:', isSignedInGoogle);
     if (isSignedInGoogle) {
       try {
         const data = await googleApiFetch('users/@me/lists');

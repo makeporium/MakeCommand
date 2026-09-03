@@ -40,13 +40,15 @@ export const Calendar = () => {
   }, [user]);
 
   const fetchEvents = async () => {
+    if (!user) return;
     const { data, error } = await supabase
       .from('calendar_events')
       .select('*')
+      .eq('user_id', user.id)
       .order('event_date', { ascending: true });
 
     if (error) {
-      toast.error('Failed to fetch events');
+      toast.error(`Failed to fetch events: ${error.message}`);
     } else {
       setEvents(data || []);
     }
@@ -79,7 +81,7 @@ export const Calendar = () => {
     }
 
     if (error) {
-      toast.error('Failed to save event');
+      toast.error(`Failed to save event: ${error.message}`);
     } else {
       toast.success(editingEvent ? 'Event updated!' : 'Event created!');
       resetForm();
