@@ -27,11 +27,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Get initial session with error fallback
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (error) {
+          console.warn('Session refresh failed, clearing invalid session:', error);
+          supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+          setUser(null);
+        } else {
+          setUser(data?.session?.user ?? null);
+        }
+      })
+      .catch((err) => {
+        console.warn('Unexpected auth error, resetting local session:', err);
+        supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
