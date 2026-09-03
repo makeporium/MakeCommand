@@ -102,6 +102,7 @@ export const Tasks = () => {
     const tokenFromHash = params.get('access_token');
     const stateFromHash = params.get('state');
 
+    // ONLY connect Google Tasks if the user explicitly clicked "Connect Google Tasks"
     if (tokenFromHash && stateFromHash === 'google_tasks_auth') {
       setGoogleAccessToken(tokenFromHash);
       setIsSignedInGoogle(true);
@@ -109,13 +110,12 @@ export const Tasks = () => {
       window.history.replaceState({}, document.title, window.location.pathname);
       toast.success('Successfully connected to Google Tasks!');
     } else {
-      const storedToken = sessionStorage.getItem(GOOGLE_ACCESS_TOKEN_KEY);
-      if (storedToken) {
-        setGoogleAccessToken(storedToken);
-        setIsSignedInGoogle(true);
-      } else {
-        setIsSignedInGoogle(false);
-      }
+      // By default, do NOT connect to Google Tasks
+      setIsSignedInGoogle(false);
+      setGoogleAccessToken(null);
+      try {
+        sessionStorage.removeItem(GOOGLE_ACCESS_TOKEN_KEY);
+      } catch (e) {}
     }
   }, []);
 
@@ -585,11 +585,28 @@ export const Tasks = () => {
           <h1 className="text-3xl font-bold text-white mb-2">Task Matrix</h1>
           <p className="text-gray-400">Organize your mission objectives</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
+          <Button
+            onClick={() => {
+              setShowForm(true);
+              setEditingTask(null);
+              setTitle('');
+              setDescription('');
+              setPriority('medium');
+              setDueDate('');
+              setProjectId('');
+            }}
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold"
+          >
+            <Plus size={20} className="mr-2" />
+            New Task
+          </Button>
+
           {!isSignedInGoogle ? (
             <Button
               onClick={handleGoogleSignIn}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="outline"
+              className="border-gray-700 text-gray-300 hover:text-white hover:border-gray-500"
             >
               Connect Google Tasks
             </Button>
@@ -620,38 +637,23 @@ export const Tasks = () => {
                 New Google Task
               </Button>
               <Button
+                onClick={handleLocalSync}
+                variant="outline"
+                className="text-white border-cyan-400 hover:bg-cyan-900/20"
+                title="Synchronize Google and Local Tasks"
+              >
+                <RefreshCw size={20} className="mr-2" />
+                Sync Tasks
+              </Button>
+              <Button
                 onClick={handleGoogleSignOut}
                 variant="outline"
                 className="text-red-400 border-red-400 hover:bg-red-900/20"
               >
-                Sign Out Google
+                Disconnect Google
               </Button>
             </div>
           )}
-          <Button
-            onClick={() => {
-              setShowForm(true);
-              setEditingTask(null); // Ensure we're creating a new LOCAL task
-              setTitle('');
-              setDescription('');
-              setPriority('medium');
-              setDueDate('');
-              setProjectId('');
-            }}
-            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-          >
-            <Plus size={20} className="mr-2" />
-            New Local Task
-          </Button>
-          <Button
-            onClick={handleLocalSync}
-            variant="outline"
-            className="text-white border-cyan-400 hover:bg-cyan-900/20"
-            title="Synchronize Google and Local Tasks"
-          >
-            <RefreshCw size={20} className="mr-2" />
-            Sync Tasks
-          </Button>
         </div>
       </div>
 

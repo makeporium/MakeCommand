@@ -46,13 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               sessionStorage.removeItem('supabase_auth_hash');
             } catch (e) {}
 
-            // If Google returned a provider token, save it for Google Tasks integration
-            if (providerToken) {
-              try {
-                sessionStorage.setItem('google_tasks_access_token', providerToken);
-              } catch (e) {}
-            }
-
             // Store access token for the fetch interceptor
             localStorage.setItem('supabase_access_token', accessToken);
 

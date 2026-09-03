@@ -28,11 +28,6 @@
         if (window.location.hash && window.location.hash.includes('access_token=')) {
           try {
             sessionStorage.setItem('supabase_auth_hash', window.location.hash);
-            var params = new URLSearchParams(window.location.hash.substring(1));
-            var providerToken = params.get('provider_token');
-            if (providerToken) {
-              sessionStorage.setItem('google_tasks_access_token', providerToken);
-            }
           } catch (e) {}
         }
       })();
