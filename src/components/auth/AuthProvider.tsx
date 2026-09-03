@@ -27,9 +27,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session with error fallback
-    supabase.auth.getSession()
-      .then(({ data, error }) => {
+    const handleAuth = async () => {
+      try {
+        // 1. Check if OAuth tokens exist in the URL hash
+        if (typeof window !== 'undefined' && window.location.hash) {
+          const hash = window.location.hash.substring(1);
+          if (hash.includes('access_token=')) {
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+
+            if (accessToken && refreshToken) {
+              const { data, error } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+
+              if (!error && data?.session?.user) {
+                setUser(data.session.user);
+                setLoading(false);
+                // Clean hash from URL without reloading
+                window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                return;
+              }
+            }
+          }
+        }
+
+        // 2. Fallback to normal getSession
+        const { data, error } = await supabase.auth.getSession();
         if (error) {
           console.warn('Session refresh failed, clearing invalid session:', error);
           supabase.auth.signOut({ scope: 'local' }).catch(() => {});
@@ -37,15 +63,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setUser(data?.session?.user ?? null);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.warn('Unexpected auth error, resetting local session:', err);
         supabase.auth.signOut({ scope: 'local' }).catch(() => {});
         setUser(null);
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    handleAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
