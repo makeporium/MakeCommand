@@ -49,10 +49,59 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     '/backgrounds/bg15.jpg',
   ];
 
-  const [bgIndex, setBgIndex] = useState(() => Math.floor(Math.random() * backgrounds.length));
+  const [currentBg, setCurrentBg] = useState(() => backgrounds[Math.floor(Math.random() * backgrounds.length)]);
+  const [nextBg, setNextBg] = useState<string | null>(null);
+  const [isFading, setIsFading] = useState(false);
+
+  // Preload all background images into memory during idle time
+  React.useEffect(() => {
+    const preloadImages = () => {
+      backgrounds.forEach((src) => {
+        const img = new Image();
+        img.src = src;
+      });
+    };
+
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(preloadImages);
+    } else {
+      setTimeout(preloadImages, 1000);
+    }
+  }, []);
 
   const handleSwitchBackground = () => {
-    setBgIndex((prev) => (prev + 1) % backgrounds.length);
+    if (isFading) return;
+
+    const currentIndex = backgrounds.indexOf(currentBg);
+    const nextIndex = (currentIndex + 1) % backgrounds.length;
+    const targetBg = backgrounds[nextIndex];
+
+    const img = new Image();
+    img.src = targetBg;
+
+    const triggerFade = () => {
+      setNextBg(targetBg);
+      // Wait a frame for nextBg layer to mount with opacity-0, then fade to opacity-100
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsFading(true);
+        });
+      });
+    };
+
+    if (img.complete) {
+      triggerFade();
+    } else {
+      img.onload = triggerFade;
+    }
+  };
+
+  const handleFadeEnd = () => {
+    if (isFading && nextBg) {
+      setCurrentBg(nextBg);
+      setNextBg(null);
+      setIsFading(false);
+    }
   };
 
   const handleMobileMenuToggle = () => {
@@ -63,16 +112,26 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="relative flex min-h-screen overflow-hidden text-white">
-      {/* Background Image Layer */}
+      {/* Persistent Base Background Layer */}
       <div
-        className="fixed inset-0 z-[-1] h-full w-full"
+        className="fixed inset-0 z-[-2] h-full w-full bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url(${backgrounds[bgIndex]})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
+          backgroundImage: `url(${currentBg})`,
         }}
       />
+
+      {/* Smooth Cross-Fade Overlay Layer */}
+      {nextBg && (
+        <div
+          onTransitionEnd={handleFadeEnd}
+          className={`fixed inset-0 z-[-1] h-full w-full bg-cover bg-center bg-no-repeat transition-opacity duration-700 ease-in-out ${
+            isFading ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            backgroundImage: `url(${nextBg})`,
+          }}
+        />
+      )}
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block">

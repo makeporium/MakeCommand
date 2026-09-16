@@ -46,16 +46,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               sessionStorage.removeItem('supabase_auth_hash');
             } catch (e) {}
 
-            // Store access token for the fetch interceptor
-            localStorage.setItem('supabase_access_token', accessToken);
+            if (providerToken) {
+              try {
+                sessionStorage.setItem('google_tasks_access_token', providerToken);
+              } catch (e) {}
+            }
 
-            // Validate token and fetch user details
+            // 1a. Establish full session in Supabase GoTrue client
+            if (refreshToken) {
+              try {
+                const { data: sessionData, error: sessionErr } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                });
+
+                if (!sessionErr && sessionData?.session?.user) {
+                  setUser(sessionData.session.user);
+                  localStorage.setItem('supabase_access_token', sessionData.session.access_token);
+                  setLoading(false);
+                  window.history.replaceState(null, '', window.location.pathname);
+                  return;
+                }
+              } catch (e) {
+                console.warn('setSession error during OAuth redirect handling:', e);
+              }
+            }
+
+            // 1b. Fallback: validate token directly via getUser
+            localStorage.setItem('supabase_access_token', accessToken);
             const { data: userData, error: userError } = await supabase.auth.getUser(accessToken);
             if (!userError && userData?.user) {
               const currentUser = userData.user;
               setUser(currentUser);
 
-              // Persist full session to Supabase local storage key
+              // Persist session to Supabase local storage key
               try {
                 const sessionPayload = {
                   access_token: accessToken,
@@ -75,7 +99,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // 2. Check for existing stored access token
+        // 2. Check for existing active session via getSession()
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (!sessionError && sessionData?.session?.user) {
+          setUser(sessionData.session.user);
+          if (sessionData.session.access_token) {
+            localStorage.setItem('supabase_access_token', sessionData.session.access_token);
+          }
+          setLoading(false);
+          return;
+        }
+
+        // 3. If session is not active or token expired, attempt refresh using stored refresh token
+        const rawStored = localStorage.getItem(SUPABASE_STORAGE_KEY);
+        if (rawStored) {
+          try {
+            const parsed = JSON.parse(rawStored);
+            if (parsed?.refresh_token) {
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+                refresh_token: parsed.refresh_token,
+              });
+              if (!refreshError && refreshData?.session?.user) {
+                setUser(refreshData.session.user);
+                if (refreshData.session.access_token) {
+                  localStorage.setItem('supabase_access_token', refreshData.session.access_token);
+                }
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('Silent refresh attempt error:', e);
+          }
+        }
+
+        // 4. Check for existing valid stored access token as last resort
         const storedToken = getStoredAccessToken();
         if (storedToken) {
           const { data: userData, error: userError } = await supabase.auth.getUser(storedToken);
@@ -83,15 +141,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(userData.user);
             setLoading(false);
             return;
-          } else {
-            // Token is expired or invalid, clear it
-            localStorage.removeItem('supabase_access_token');
-            localStorage.removeItem(SUPABASE_STORAGE_KEY);
-            setUser(null);
           }
-        } else {
-          setUser(null);
         }
+
+        // 5. If everything failed, reset state
+        localStorage.removeItem('supabase_access_token');
+        localStorage.removeItem(SUPABASE_STORAGE_KEY);
+        setUser(null);
       } catch (err) {
         console.warn('Auth initialization error:', err);
         setUser(null);
@@ -102,13 +158,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     handleAuth();
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Listen for auth state changes (including automatic TOKEN_REFRESHED)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUser(session.user);
         if (session.access_token) {
           localStorage.setItem('supabase_access_token', session.access_token);
         }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        localStorage.removeItem('supabase_access_token');
+        localStorage.removeItem(SUPABASE_STORAGE_KEY);
       }
       setLoading(false);
     });
@@ -149,6 +209,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     });
     if (error) throw error;
