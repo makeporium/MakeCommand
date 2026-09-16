@@ -1,10 +1,23 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, Tag, Calendar, Edit, Trash2, Brain } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Tag,
+  Calendar,
+  Edit,
+  Trash2,
+  Brain,
+  X,
+  Maximize2,
+  ExternalLink,
+  Upload,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { toast } from 'sonner';
@@ -28,14 +41,73 @@ export const Thoughts = () => {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [images, setImages] = useState<File[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) fetchThoughts();
   }, [user]);
+
+  // Handle global paste event when the thought form is open
+  useEffect(() => {
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      if (!showForm) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const pastedFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            const ext = file.type.split('/')[1] || 'png';
+            const namedFile = new File([file], `pasted-${Date.now()}-${i}.${ext}`, {
+              type: file.type,
+            });
+            pastedFiles.push(namedFile);
+          }
+        }
+      }
+
+      if (pastedFiles.length > 0) {
+        e.preventDefault();
+        setImages(prev => [...prev, ...pastedFiles]);
+        toast.success(
+          `${pastedFiles.length} image${pastedFiles.length > 1 ? 's' : ''} pasted from clipboard!`
+        );
+      }
+    };
+
+    if (showForm) {
+      window.addEventListener('paste', handleGlobalPaste);
+    }
+    return () => {
+      window.removeEventListener('paste', handleGlobalPaste);
+    };
+  }, [showForm]);
+
+  // Handle Escape key and scroll lock for full view preview
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPreviewImage(null);
+      }
+    };
+    if (previewImage) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'auto';
+    };
+  }, [previewImage]);
 
   const fetchThoughts = async () => {
     if (!user) return;
@@ -49,16 +121,41 @@ export const Thoughts = () => {
     else setThoughts(data || []);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFiles = Array.from(e.target.files);
+      setImages(prev => [...prev, ...selectedFiles]);
+      e.target.value = '';
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      const droppedFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      if (droppedFiles.length > 0) {
+        setImages(prev => [...prev, ...droppedFiles]);
+        toast.success(`${droppedFiles.length} image${droppedFiles.length > 1 ? 's' : ''} added!`);
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
-    let imageUrls: string[] = [];
+    const newUploadedUrls: string[] = [];
 
     if (images.length > 0) {
       for (const img of images) {
         const filePath = `${user.id}/${Date.now()}-${img.name}`;
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
           .from('thought-images')
           .upload(filePath, img, { upsert: true });
 
@@ -72,22 +169,19 @@ export const Thoughts = () => {
           .getPublicUrl(filePath);
 
         if (urlData?.publicUrl) {
-          imageUrls.push(urlData.publicUrl);
+          newUploadedUrls.push(urlData.publicUrl);
         }
       }
     }
 
-    const image_urls =
-      editingThought && imageUrls.length === 0
-        ? editingThought.image_urls || []
-        : imageUrls;
+    const finalImageUrls = [...existingImageUrls, ...newUploadedUrls];
 
     const thoughtData = {
       title,
       content,
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       user_id: user.id,
-      image_urls,
+      image_urls: finalImageUrls,
     };
 
     let error;
@@ -117,6 +211,7 @@ export const Thoughts = () => {
     setContent('');
     setTags('');
     setImages([]);
+    setExistingImageUrls([]);
     setShowForm(false);
     setEditingThought(null);
   };
@@ -127,6 +222,7 @@ export const Thoughts = () => {
     setContent(t.content);
     setTags(t.tags.join(', '));
     setImages([]);
+    setExistingImageUrls(t.image_urls || []);
     setShowForm(true);
   };
 
@@ -250,37 +346,103 @@ export const Thoughts = () => {
               />
             </div>
 
-            <div>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={e => e.target.files && setImages(Array.from(e.target.files))}
-                className="text-white"
-              />
-              {(images.length > 0 || editingThought?.image_urls?.length) && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {images.map((img, i) => (
-                    <img
-                      key={i}
-                      src={URL.createObjectURL(img)}
-                      alt={`preview-${i}`}
-                      className="h-20 rounded object-cover border border-gray-600"
-                    />
+            {/* Image Upload and Paste Section */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                <ImageIcon size={16} className="text-cyan-400" />
+                <span>Images (Paste from clipboard or browse)</span>
+              </label>
+
+              {/* Paste / Drop / Browse Dropzone */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                className="group relative border-2 border-dashed border-gray-700 hover:border-cyan-500/60 bg-gray-900/40 hover:bg-gray-800/50 rounded-xl p-5 text-center cursor-pointer transition-all duration-200"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-full text-cyan-400 group-hover:scale-110 transition-transform">
+                    <Upload size={20} />
+                  </div>
+                  <div className="text-sm text-gray-300">
+                    <span className="font-semibold text-cyan-400">Click to browse</span>, drag & drop, or simply{' '}
+                    <span className="px-1.5 py-0.5 bg-cyan-900/60 border border-cyan-500/40 rounded text-cyan-300 font-mono text-xs">
+                      Ctrl+V
+                    </span>{' '}
+                    to paste images
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Paste screenshots directly from clipboard (Snipping Tool, browser copy, etc.)
+                  </p>
+                </div>
+              </div>
+
+              {/* Image Previews */}
+              {(images.length > 0 || existingImageUrls.length > 0) && (
+                <div className="flex flex-wrap gap-3 pt-2">
+                  {/* Existing images from thought being edited */}
+                  {existingImageUrls.map((url, i) => (
+                    <div key={`existing-${i}`} className="group relative">
+                      <img
+                        src={url}
+                        alt={`Existing ${i + 1}`}
+                        onClick={() => setPreviewImage(url)}
+                        className="h-20 w-20 rounded-lg object-cover border border-gray-600 cursor-pointer hover:opacity-90 hover:border-cyan-400 transition-all"
+                        title="Click to view full image"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExistingImageUrls(prev => prev.filter((_, idx) => idx !== i));
+                        }}
+                        className="absolute -top-2 -right-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md transition-transform hover:scale-110"
+                        title="Remove image"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
                   ))}
-                  {images.length === 0 && editingThought?.image_urls?.map((url, i) => (
-                    <img
-                      key={i}
-                      src={url}
-                      alt={`existing-${i}`}
-                      className="h-20 rounded object-cover border border-gray-600"
-                    />
-                  ))}
+
+                  {/* New images (selected or pasted) */}
+                  {images.map((img, i) => {
+                    const objectUrl = URL.createObjectURL(img);
+                    return (
+                      <div key={`new-${i}`} className="group relative">
+                        <img
+                          src={objectUrl}
+                          alt={`New preview ${i + 1}`}
+                          onClick={() => setPreviewImage(objectUrl)}
+                          className="h-20 w-20 rounded-lg object-cover border border-cyan-500/50 cursor-pointer hover:opacity-90 hover:border-cyan-400 transition-all"
+                          title="Click to view full image"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setImages(prev => prev.filter((_, idx) => idx !== i));
+                          }}
+                          className="absolute -top-2 -right-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md transition-transform hover:scale-110"
+                          title="Remove image"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-2">
               <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700">
                 {editingThought ? 'Update' : 'Save'} Thought
               </Button>
@@ -311,9 +473,25 @@ export const Thoughts = () => {
             </div>
 
             {t.image_urls && t.image_urls.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-3 mb-4">
                 {t.image_urls.map((url, i) => (
-                  <img key={i} src={url} alt={`img-${i}`} className="h-32 rounded object-cover border border-gray-700" />
+                  <div
+                    key={i}
+                    onClick={() => setPreviewImage(url)}
+                    className="group relative cursor-pointer overflow-hidden rounded-lg border border-gray-700 hover:border-cyan-400/70 transition-all duration-200"
+                    title="Click to view full image"
+                  >
+                    <img
+                      src={url}
+                      alt={`attachment-${i}`}
+                      className="h-32 w-auto max-w-xs rounded-lg object-cover group-hover:scale-105 group-hover:brightness-105 transition-all duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                      <div className="p-2 bg-black/60 rounded-full border border-cyan-400/50 text-cyan-300">
+                        <Maximize2 size={18} />
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -354,6 +532,48 @@ export const Thoughts = () => {
           <Brain size={64} className="mx-auto text-gray-600 mb-4" />
           <p className="text-gray-400 text-lg">No thoughts found</p>
           <p className="text-gray-500">Start capturing your ideas and insights</p>
+        </div>
+      )}
+
+      {/* Full View Lightbox Modal */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-[95vw] flex flex-col items-center"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Top Toolbar */}
+            <div className="absolute -top-12 right-0 flex items-center gap-3">
+              <a
+                href={previewImage}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800/90 hover:bg-gray-700 text-cyan-300 rounded-lg text-sm border border-cyan-500/30 transition-colors shadow-lg"
+                title="Open original in new tab"
+              >
+                <ExternalLink size={15} />
+                <span>Original</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="p-1.5 bg-gray-800/90 hover:bg-red-900/70 text-gray-300 hover:text-white rounded-lg border border-gray-700 transition-colors shadow-lg"
+                title="Close (Esc)"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Full Image */}
+            <img
+              src={previewImage}
+              alt="Full view thought attachment"
+              className="max-h-[85vh] max-w-[92vw] rounded-xl object-contain border border-cyan-500/40 shadow-2xl shadow-cyan-950/60"
+            />
+          </div>
         </div>
       )}
     </div>
