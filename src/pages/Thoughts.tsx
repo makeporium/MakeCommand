@@ -1,6 +1,5 @@
-'use client';
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +16,8 @@ import {
   ExternalLink,
   Upload,
   Image as ImageIcon,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -45,6 +46,7 @@ export const Thoughts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
@@ -97,6 +99,7 @@ export const Thoughts = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setPreviewImage(null);
+        setIsZoomed(false);
       }
     };
     if (previewImage) {
@@ -535,46 +538,90 @@ export const Thoughts = () => {
         </div>
       )}
 
-      {/* Full View Lightbox Modal */}
-      {previewImage && (
+      {/* Full View Lightbox Modal rendered via Portal directly to body */}
+      {previewImage && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200"
-          onClick={() => setPreviewImage(null)}
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/92 backdrop-blur-xl p-4 sm:p-8 animate-in fade-in duration-200 select-none overflow-hidden"
+          onClick={() => {
+            setPreviewImage(null);
+            setIsZoomed(false);
+          }}
         >
+          {/* Top Floating Glass Header Toolbar */}
           <div
-            className="relative max-h-[90vh] max-w-[95vw] flex flex-col items-center"
+            className="fixed top-0 inset-x-0 p-4 sm:p-5 flex items-center justify-between z-20 bg-gradient-to-b from-black/95 via-black/60 to-transparent"
             onClick={e => e.stopPropagation()}
           >
-            {/* Top Toolbar */}
-            <div className="absolute -top-12 right-0 flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-semibold text-cyan-400 bg-gray-900/90 px-3 py-1.5 rounded-lg border border-cyan-500/30 shadow-lg">
+                Image Full View
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsZoomed(prev => !prev)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/90 hover:bg-gray-800 text-cyan-300 hover:text-cyan-200 rounded-lg text-sm border border-cyan-500/30 transition-all shadow-lg"
+                title={isZoomed ? 'Fit to screen' : 'Zoom in'}
+              >
+                {isZoomed ? <ZoomOut size={16} /> : <ZoomIn size={16} />}
+                <span className="hidden sm:inline">{isZoomed ? 'Fit to Screen' : 'Zoom In'}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-3">
               <a
                 href={previewImage}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800/90 hover:bg-gray-700 text-cyan-300 rounded-lg text-sm border border-cyan-500/30 transition-colors shadow-lg"
-                title="Open original in new tab"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900/90 hover:bg-gray-800 text-cyan-300 hover:text-cyan-200 rounded-lg text-sm border border-cyan-500/30 transition-all shadow-lg"
+                title="Open original high-res in new tab"
               >
                 <ExternalLink size={15} />
-                <span>Original</span>
+                <span className="hidden sm:inline">Original</span>
               </a>
+
               <button
                 type="button"
-                onClick={() => setPreviewImage(null)}
-                className="p-1.5 bg-gray-800/90 hover:bg-red-900/70 text-gray-300 hover:text-white rounded-lg border border-gray-700 transition-colors shadow-lg"
-                title="Close (Esc)"
+                onClick={() => {
+                  setPreviewImage(null);
+                  setIsZoomed(false);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-lg text-sm transition-all shadow-lg border border-red-500/40"
+                title="Close preview (Esc)"
               >
-                <X size={20} />
+                <X size={18} />
+                <span className="font-medium">Close</span>
               </button>
             </div>
+          </div>
 
-            {/* Full Image */}
+          {/* Centered Scrollable/Zoomable Image Area */}
+          <div
+            className={`relative flex items-center justify-center transition-all duration-300 ${
+              isZoomed ? 'overflow-auto max-h-[88vh] max-w-[95vw]' : 'max-h-[85vh] max-w-[90vw]'
+            }`}
+            onClick={e => e.stopPropagation()}
+          >
             <img
               src={previewImage}
-              alt="Full view thought attachment"
-              className="max-h-[85vh] max-w-[92vw] rounded-xl object-contain border border-cyan-500/40 shadow-2xl shadow-cyan-950/60"
+              alt="Full view attachment"
+              onClick={() => setIsZoomed(prev => !prev)}
+              className={`rounded-xl object-contain border border-cyan-500/40 shadow-[0_0_50px_rgba(6,182,212,0.25)] transition-all duration-300 ${
+                isZoomed
+                  ? 'max-h-none max-w-none scale-125 sm:scale-150 cursor-zoom-out'
+                  : 'max-h-[80vh] max-w-[88vw] cursor-zoom-in hover:brightness-105'
+              }`}
+              title={isZoomed ? 'Click to fit screen' : 'Click to zoom in'}
             />
           </div>
-        </div>
+
+          {/* Bottom Hint */}
+          <div className="fixed bottom-4 inset-x-0 flex justify-center pointer-events-none z-20">
+            <div className="bg-black/75 backdrop-blur-md px-4 py-1.5 rounded-full border border-gray-700/60 text-xs text-gray-300 shadow-xl">
+              Click image to {isZoomed ? 'fit screen' : 'zoom'} • Press <kbd className="px-1.5 py-0.5 bg-gray-800 rounded border border-gray-600 text-cyan-300 font-mono text-[11px]">Esc</kbd> or click outside to close
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
